@@ -1,7 +1,11 @@
 @extends('layout.app')
 
 @section('content')
-    <h1>All Sales</h1>
+    <h1>Sales</h1>
+    <a href={{route('sales.create')}}>
+        <button>Create new sale</button>
+    </a>
+    <h3>All Sales details</h3>
     <ul>
         @foreach($sales as $sale)
             <li>
