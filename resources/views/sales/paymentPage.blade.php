@@ -8,6 +8,10 @@
     <title>Document</title>
 </head>
 <body>
-
+    <h1>Payment Page</h1>
+    <iframe width="600"
+            height="450"
+            src={{ $paymentUrl }}>
+    </iframe>
 </body>
 </html>

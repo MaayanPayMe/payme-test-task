@@ -11,7 +11,7 @@
                     <label for="productName">Product name</label>
                 </td>
                 <td>
-                    <input type="text" id="productName" name="productName" placeholder="Enter product name" />
+                    <input type="text" id="productName" name="productName" placeholder="Enter product name"/>
                 </td>
             </tr>
             <tr>
@@ -19,7 +19,7 @@
                     <label for="price">Price</label>
                 </td>
                 <td>
-                    <input type="number" id="price" name="price" placeholder="Enter price">
+                    <input type="text" id="price" name="price" placeholder="Enter price">
                 </td>
             </tr>
             <tr>
@@ -36,20 +36,20 @@
             </tr>
             <tr>
                 <td>
-                    <br />
+                    <br/>
                     <input type="submit" name="submit" value="Insert payment details"/>
                 </td>
             </tr>
         </form>
     </table>
 
-{{--    @if ($errors->any())--}}
-{{--        <div class="alert alert-danger">--}}
-{{--            <ul>--}}
-{{--                @foreach ($errors->all() as $error)--}}
-{{--                    <li>{{ $error }}</li>--}}
-{{--                @endforeach--}}
-{{--            </ul>--}}
-{{--        </div>--}}
-{{--    @endif--}}
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 @show
