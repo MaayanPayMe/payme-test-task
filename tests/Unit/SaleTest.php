@@ -3,7 +3,6 @@
 namespace Tests\Unit;
 
 use App\Http\Controllers\SaleController;
-use App\Models\Sale;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase;
