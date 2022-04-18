@@ -44,19 +44,11 @@ class SaleController extends Controller
      */
     public function store(Request $request)
     {
-        $this->validate($request, [
-            "productName" => "required",
-            "price"       => "required|numeric|between:100,9999.99",
-            "currency"    => "required",
-        ]);
-
-        $productName = $request->productName;
-        $price = $request->price;
-        $currency = $request->currency;
+        $this->validateSale($request);
 
         try {
-            $paymentUrl = $this->getPaymentPage($productName, $price, $currency);
-            $this->createNewSale($productName, $price, $currency);
+            $paymentUrl = $this->getPaymentPage($request->productName, $request->price, $request->currency);
+            $this->createNewSale($request->productName, $request->price, $request->currency);
 
             return view("sales.paymentPage", compact("paymentUrl"));
         } catch (Exception $exception) {
@@ -64,6 +56,14 @@ class SaleController extends Controller
 
             return view("sales.errorPage", compact("errorMsg"));
         }
+    }
+
+    private function validateSale(Request $request) {
+        $this->validate($request, [
+            "productName" => "required",
+            "price"       => "required|numeric|between:100,9999.99",
+            "currency"    => "required",
+        ]);
     }
 
     private function createNewSale($productName, $price, $currency)
