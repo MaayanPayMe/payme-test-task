@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Sale;
 use Exception;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Validation\ValidationException;
 
 class SaleController extends Controller
 {
@@ -39,8 +40,7 @@ class SaleController extends Controller
      * Store a newly created resource in storage.
      *
      * @param Request $request
-     * @return Application
-     * @throws ValidationException
+     * @return Application|Factory|View
      */
     public function store(Request $request)
     {
@@ -48,7 +48,7 @@ class SaleController extends Controller
 
         try {
             $paymentUrl = $this->getPaymentPage($request->productName, $request->price, $request->currency);
-            $this->createNewSale($request->productName, $request->price, $request->currency);
+            $this->editSale(new Sale(), $request->productName, $request->price, $request->currency);
 
             return view("sales.paymentPage", compact("paymentUrl"));
         } catch (Exception $exception) {
@@ -56,6 +56,41 @@ class SaleController extends Controller
 
             return view("sales.errorPage", compact("errorMsg"));
         }
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param int $id
+     * @return string
+     */
+    public function show(int $id): string
+    {
+        return response(Sale::findOrFail($id));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return void
+     */
+    public function update(Request $request, int $id)
+    {
+        $this->validateSale($request);
+        $this->editSale(Sale::findOrFail($id), $request->productName, $request->price, $request->currency);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param int $id
+     * @return void
+     */
+    public function destroy(int $id)
+    {
+        Sale::findOrFail($id)->delete();
     }
 
     private function validateSale(Request $request) {
@@ -66,13 +101,12 @@ class SaleController extends Controller
         ]);
     }
 
-    private function createNewSale($productName, $price, $currency)
+    private function editSale(Sale $param, $productName, $price, $currency)
     {
-        $sale = new Sale;
-        $sale->product_name = $productName;
-        $sale->price = $price;
-        $sale->currency = $currency;
-        $sale->save();
+        $param->product_name = $productName;
+        $param->price = $price;
+        $param->currency = $currency;
+        $param->save();
     }
 
     /**
