@@ -3,6 +3,8 @@
 namespace Tests\Unit;
 
 use App\Http\Controllers\SaleController;
+use App\Models\Sale;
+use http\Exception;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\TestCase;
@@ -24,22 +26,10 @@ class SaleTest extends TestCase
      * @throws ReflectionException
      * @throws BindingResolutionException
      */
-    public function test_good_createNewSale()
+    public function testSuccessEditSale()
     {
-        $method = $this->getPrivateMethods(SaleController::class, "createNewSale");
-        $method->invokeArgs(app()->make(SaleController::class), ['test', '555', 'ILS']);
-        $this->assertTrue(true);
-    }
-
-    /**
-     * @throws ReflectionException
-     * @throws BindingResolutionException
-     */
-    public function test_wrong_price_createNewSale()
-    {
-        $this->expectException(QueryException::class);
-        $method = $this->getPrivateMethods(SaleController::class, "createNewSale");
-        $method->invokeArgs(app()->make(SaleController::class), ['test', 'aaaa', 'ILS']);
+        $method = $this->getPrivateMethods(Sale::class, "edit");
+        $method->invokeArgs(app()->make(Sale::class), ["test", "555", "ILS"]);
         $this->assertTrue(true);
     }
 
@@ -51,10 +41,10 @@ class SaleTest extends TestCase
      * @throws ReflectionException
      * @throws BindingResolutionException
      */
-    public function test_good_getPaymentPage()
+    public function testSuccessGetPaymentPage()
     {
         $method = $this->getPrivateMethods(SaleController::class, "getPaymentPage");
-        $result = $method->invokeArgs(app()->make(SaleController::class), ['test', '555', 'ILS']);
+        $result = $method->invokeArgs(app()->make(SaleController::class), [new Sale([], "test", "555", "ILS")]);
         $this->assertNotEmpty($result);
     }
 
@@ -62,33 +52,33 @@ class SaleTest extends TestCase
      * @throws ReflectionException
      * @throws BindingResolutionException
      */
-    public function test_wrong_price_getPaymentPage()
+    public function testFailedPriceGetPaymentPage()
     {
-        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage("Invalid price, out of min-max bounds");
         $method = $this->getPrivateMethods(SaleController::class, "getPaymentPage");
-        $method->invokeArgs(app()->make(SaleController::class), ['test', '99', 'ILS']);
+        $method->invokeArgs(app()->make(SaleController::class), [new Sale([], 'test', '99', 'ILS')]);
     }
 
     /**
      * @throws ReflectionException
      * @throws BindingResolutionException
      */
-    public function test_no_product_name_getPaymentPage()
+    public function testNoProductNameGetPaymentPage()
     {
-        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage("Invalid description");
         $method = $this->getPrivateMethods(SaleController::class, "getPaymentPage");
-        $method->invokeArgs(app()->make(SaleController::class), ['', '99', 'ILS']);
+        $method->invokeArgs(app()->make(SaleController::class), [new Sale([], "", "555", "ILS")]);
     }
 
     /**
      * @throws ReflectionException
      * @throws BindingResolutionException
      */
-    public function test_no_currency_getPaymentPage()
+    public function testNoCurrencyGetPaymentPage()
     {
-        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage("Required parameter is missing");
         $method = $this->getPrivateMethods(SaleController::class, "getPaymentPage");
-        $method->invokeArgs(app()->make(SaleController::class), ['test', '99', '']);
+        $method->invokeArgs(app()->make(SaleController::class), [new Sale([], "test", "555", "")]);
     }
 
     /**
@@ -99,11 +89,11 @@ class SaleTest extends TestCase
      * @throws ReflectionException
      * @throws BindingResolutionException
      */
-    public function test_sale_good_validateSale()
+    public function testSaleSuccessValidateSale()
     {
         $method = $this->getPrivateMethods(SaleController::class, "validateSale");
 
-        $saleReq = Request::create('', 'POST', [
+        $saleReq = Request::create("", "POST", [
             "price"       => "555",
             "currency"    => "ILS",
             "productName" => "test_validate"
@@ -117,13 +107,12 @@ class SaleTest extends TestCase
      * @throws ReflectionException
      * @throws BindingResolutionException
      */
-    public function test_sale_small_price_validateSale()
+    public function testSaleSmallPriceValidateSale()
     {
         $this->expectException(ValidationException::class);
-        $this->withoutExceptionHandling((array)ValidationException::class);
         $method = $this->getPrivateMethods(SaleController::class, "validateSale");
 
-        $saleReq = Request::create('', 'POST', [
+        $saleReq = Request::create("", "POST", [
             "price"       => "99",
             "currency"    => "ILS",
             "productName" => "test_validate"
@@ -136,13 +125,12 @@ class SaleTest extends TestCase
      * @throws ReflectionException
      * @throws BindingResolutionException
      */
-    public function test_sale_large_price_validateSale()
+    public function testSaleLargePriceValidateSale()
     {
         $this->expectException(ValidationException::class);
-        $this->withoutExceptionHandling((array)ValidationException::class);
         $method = $this->getPrivateMethods(SaleController::class, "validateSale");
 
-        $saleReq = Request::create('', 'POST', [
+        $saleReq = Request::create("", "POST", [
             "price"       => "1000000",
             "currency"    => "ILS",
             "productName" => "test_validate"
@@ -155,13 +143,12 @@ class SaleTest extends TestCase
      * @throws ReflectionException
      * @throws BindingResolutionException
      */
-    public function test_sale_not_a_number_price_validateSale()
+    public function testSaleFailedPriceTypeValidateSale()
     {
         $this->expectException(ValidationException::class);
-        $this->withoutExceptionHandling((array)ValidationException::class);
         $method = $this->getPrivateMethods(SaleController::class, "validateSale");
 
-        $saleReq = Request::create('', 'POST', [
+        $saleReq = Request::create("", "POST", [
             "price"       => "abc",
             "currency"    => "ILS",
             "productName" => "test_validate"
@@ -174,13 +161,12 @@ class SaleTest extends TestCase
      * @throws ReflectionException
      * @throws BindingResolutionException
      */
-    public function test_sale_without_currency_validateSale()
+    public function testSaleWithoutCurrencyValidateSale()
     {
         $this->expectException(ValidationException::class);
-        $this->withoutExceptionHandling((array)ValidationException::class);
         $method = $this->getPrivateMethods(SaleController::class, "validateSale");
 
-        $saleReq = Request::create('', 'POST', [
+        $saleReq = Request::create("", "POST", [
             "price"       => "555",
             "productName" => "test_validate"
         ]);
@@ -192,13 +178,12 @@ class SaleTest extends TestCase
      * @throws ReflectionException
      * @throws BindingResolutionException
      */
-    public function test_sale_without_product_name_validateSale()
+    public function testSaleWithoutProductNameValidateSale()
     {
         $this->expectException(ValidationException::class);
-        $this->withoutExceptionHandling((array)ValidationException::class);
         $method = $this->getPrivateMethods(SaleController::class, "validateSale");
 
-        $saleReq = Request::create('', 'POST', [
+        $saleReq = Request::create("", "POST", [
             "price"    => "555",
             "currency" => "ILS"
         ]);
@@ -210,13 +195,12 @@ class SaleTest extends TestCase
      * @throws ReflectionException
      * @throws BindingResolutionException
      */
-    public function test_sale_without_price_validateSale()
+    public function testSaleWithoutPriceValidateSale()
     {
         $this->expectException(ValidationException::class);
-        $this->withoutExceptionHandling((array)ValidationException::class);
         $method = $this->getPrivateMethods(SaleController::class, "validateSale");
 
-        $saleReq = Request::create('', 'POST', [
+        $saleReq = Request::create("", "POST", [
             "currency"    => "ILS",
             "productName" => "test_validate"
         ]);

@@ -14,5 +14,5 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', [SaleController::class, 'index']);
+Route::get("/", [SaleController::class, "index"]);
 Route::resource('sales', SaleController::class)->only(["index", "create", "store"]);

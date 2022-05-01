@@ -5,15 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Sale;
 use Exception;
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\ValidationException;
 
 class SaleController extends Controller
 {
+    static string $sellerPayMeId = "MPL14985-68544Z1G-SPV5WK2K-0WJWHC7N";
+
     /**
      * Display a listing of the resource.
      *
@@ -41,14 +42,16 @@ class SaleController extends Controller
      *
      * @param Request $request
      * @return Application|Factory|View
+     * @throws ValidationException
      */
     public function store(Request $request)
     {
         $this->validateSale($request);
 
         try {
-            $paymentUrl = $this->getPaymentPage($request->productName, $request->price, $request->currency);
-            $this->editSale(new Sale(), $request->productName, $request->price, $request->currency);
+            $newSale = new Sale([], $request->productName, $request->price, $request->currency);
+            $paymentUrl = $this->getPaymentPage($newSale);
+            $newSale->save();
 
             return view("sales.paymentPage", compact("paymentUrl"));
         } catch (Exception $exception) {
@@ -75,11 +78,13 @@ class SaleController extends Controller
      * @param Request $request
      * @param int $id
      * @return void
+     * @throws ValidationException
      */
     public function update(Request $request, int $id)
     {
         $this->validateSale($request);
-        $this->editSale(Sale::findOrFail($id), $request->productName, $request->price, $request->currency);
+        $sale = Sale::findOrFail($id);
+        $sale->edit($request->productName, $request->price, $request->currency);
     }
 
     /**
@@ -93,32 +98,27 @@ class SaleController extends Controller
         Sale::findOrFail($id)->delete();
     }
 
+    /**
+     * @throws ValidationException
+     */
     private function validateSale(Request $request) {
         $this->validate($request, [
             "productName" => "required",
             "price"       => "required|numeric|between:100,9999.99",
-            "currency"    => "required",
+            "currency"    => "required|size:3",
         ]);
-    }
-
-    private function editSale(Sale $param, $productName, $price, $currency)
-    {
-        $param->product_name = $productName;
-        $param->price = $price;
-        $param->currency = $currency;
-        $param->save();
     }
 
     /**
      * @throws Exception
      */
-    private function getPaymentPage($productName, $price, $currency)
+    private function getPaymentPage(Sale $sale)
     {
         $response = Http::post("https://preprod.paymeservice.com/api/generate-sale", [
-            "seller_payme_id" => "MPL14985-68544Z1G-SPV5WK2K-0WJWHC7N",
-            "sale_price"      => $price,
-            "currency"        => $currency,
-            "product_name"    => $productName,
+            "seller_payme_id" => $this::$sellerPayMeId,
+            "sale_price"      => $sale->getPrice(),
+            "currency"        => $sale->getCurrency(),
+            "product_name"    => $sale->getProductName(),
             "installments"    => "1",
             "language"        => "en"
         ]);
